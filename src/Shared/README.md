@@ -1,0 +1,5 @@
+# Gnome.Shared
+
+{{ description }}
+
+{{ license }}

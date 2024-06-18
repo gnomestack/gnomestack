@@ -22,6 +22,7 @@
     <PackageVersion Include="AsyncFixer" Version="1.6.0" />
     <!-- <PackageVersion Include="Microsoft.CodeAnalysis.PublicApiAnalyzers" Version="*" PrivateAssets="all" /> -->
     <PackageVersion Include="Microsoft.CodeAnalysis.BannedApiAnalyzers" Version="3.11.0-beta1.24225.1" />
+    <PackageVersion Include="Polyfill" Version="5.5.2" />
     <PackageVersion Include="MinVer" Version="5.0.0" />
   </ItemGroup>
 </Project>

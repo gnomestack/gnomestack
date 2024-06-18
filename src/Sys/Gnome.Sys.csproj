@@ -1,0 +1,42 @@
+<Project Sdk="Microsoft.NET.Sdk">
+
+  <PropertyGroup>
+    <StdFx Condition="$(StdFx) == ''">net8.0</StdFx>
+    <TargetFrameworks>$(StdFx)</TargetFrameworks>
+    <Nullable>enable</Nullable>
+    <ImplicitUsings>true</ImplicitUsings>
+    <RootNamespace>Gnome</RootNamespace>
+    <DefineConstants>GNOME_EXPOSE</DefineConstants>
+    <AllowUnsafeBlocks>true</AllowUnsafeBlocks>
+  </PropertyGroup>
+
+  <PropertyGroup>
+    <PackageReadmeFile>README.md</PackageReadmeFile>
+    <PackageTags></PackageTags>
+    <Description>
+    Gnome.Sys
+    </Description>
+    <PackageReleaseNotes Condition="Exists('$(MSBuildProjectDirectory)/CHANGELOG.md')">
+      $([System.IO.File]::ReadAllText("$(MSBuildProjectDirectory)/CHANGELOG.md"))
+    </PackageReleaseNotes>
+  </PropertyGroup>
+
+  <ItemGroup>
+    <None Condition="Exists('LICENSE.md')" Include="LICENSE.md" Pack="true" PackagePath="\"/>
+    <None Condition="Exists('$(IconPath)')" Include="$(IconPath)" Pack="true" PackagePath="\" />
+    <None Update="README.md">
+      <Pack>true</Pack>
+      <PackagePath>/</PackagePath>
+    </None>
+  </ItemGroup>
+
+  <ItemGroup>
+   <PackageReference Include="Polyfill" />
+  </ItemGroup>
+
+  <ItemGroup>
+    <Folder Include="Text\" />
+  </ItemGroup>
+  
+
+</Project>
