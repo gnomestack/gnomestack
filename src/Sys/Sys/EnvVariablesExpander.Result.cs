@@ -1,34 +1,26 @@
-using System.Diagnostics.CodeAnalysis;
 using System.Text;
 
 using Gnome.Text;
-#if NETLEGACY
-using Gnome.Sys.Strings;
-#endif
 
 namespace Gnome.Sys;
 
-[SuppressMessage("Major Code Smell", "S127:\"for\" loop stop conditions should be invariant")]
 internal static partial class EnvVariablesExpander
 {
-    private enum TokenKind
+    public static Result<string> ExpandAsResult(string template, EnvExpandOptions? options = null)
     {
-        None,
-        Windows,
-        BashVariable,
-        BashInterpolation,
+        var r = ExpandAsResult(template.AsSpan(), options);
+        return r.IsOk ?
+            new string(r.Value) :
+            r.Error;
     }
 
-    public static string Expand(string template, EnvExpandOptions? options = null)
-        => Expand(template.AsSpan(), options).ToString();
-
-    public static ReadOnlySpan<char> Expand(ReadOnlySpan<char> template, EnvExpandOptions? options = null)
+    public static ValueResult<char[]> ExpandAsResult(ReadOnlySpan<char> template, EnvExpandOptions? options = null)
     {
         var o = options ?? new EnvExpandOptions();
         Func<string, string?> getValue = o.GetVariable ?? Environment.GetEnvironmentVariable;
         var setValue = o.SetVariable ?? Environment.SetEnvironmentVariable;
-        var tokenBuilder = StringBuilderCache.Acquire();
-        var output = StringBuilderCache.Acquire();
+        var tokenBuilder = new StringBuilder();
+        var output = new StringBuilder();
         var kind = TokenKind.None;
         var remaining = template.Length;
         for (var i = 0; i < template.Length; i++)
@@ -105,6 +97,8 @@ internal static partial class EnvVariablesExpander
                 if (tokenBuilder.Length == 0)
                 {
                     // with bash '${}' is a bad substitution.
+                    StringBuilderCache.Release(tokenBuilder);
+                    StringBuilderCache.Release(output);
                     throw new EnvExpandException("${} is a bad substitution. Variable name not provided.");
                 }
 
@@ -149,23 +143,39 @@ internal static partial class EnvVariablesExpander
 
                 if (key.Length == 0)
                 {
-                    throw new EnvExpandException("Bad substitution, empty variable name.");
+                    StringBuilderCache.Release(tokenBuilder);
+                    StringBuilderCache.Release(output);
+                    return new EnvExpandException("Bad substitution, empty variable name.");
                 }
 
                 if (!IsValidBashVariable(key.AsSpan()))
                 {
-                    throw new EnvExpandException($"Bad substitution, invalid variable name {key}.");
+                    StringBuilderCache.Release(tokenBuilder);
+                    StringBuilderCache.Release(output);
+                    return new EnvExpandException($"Bad substitution, invalid variable name {key}.");
                 }
 
                 var value = getValue(key);
                 if (value is not null)
+                {
                     output.Append(value);
+                }
                 else if (message is not null)
-                    throw new EnvExpandException(message);
+                {
+                    StringBuilderCache.Release(tokenBuilder);
+                    StringBuilderCache.Release(output);
+                    return new EnvExpandException(message);
+                }
                 else if (defaultValue.Length > 0)
+                {
                     output.Append(defaultValue);
+                }
                 else
-                    throw new EnvExpandException($"Bad substitution, variable {key} is not set.");
+                {
+                    StringBuilderCache.Release(tokenBuilder);
+                    StringBuilderCache.Release(output);
+                    return new EnvExpandException($"Bad substitution, variable {key} is not set.");
+                }
 
                 tokenBuilder.Clear();
                 kind = TokenKind.None;
@@ -195,13 +205,19 @@ internal static partial class EnvVariablesExpander
                 var key = tokenBuilder.ToString();
                 if (key.Length == 0)
                 {
-                    throw new EnvExpandException("Bad substitution, empty variable name.");
+                    StringBuilderCache.Release(tokenBuilder);
+                    StringBuilderCache.Release(output);
+                    return new EnvExpandException("Bad substitution, empty variable name.");
                 }
 
                 if (o.UnixArgsExpansion && int.TryParse(key, out var index))
                 {
                     if (index < 0 || index >= Environment.GetCommandLineArgs().Length)
-                        throw new EnvExpandException($"Bad substitution, invalid index {index}.");
+                    {
+                        StringBuilderCache.Release(tokenBuilder);
+                        StringBuilderCache.Release(output);
+                        return new EnvExpandException($"Bad substitution, invalid index {index}.");
+                    }
 
                     output.Append(Environment.GetCommandLineArgs()[index]);
                     if (append)
@@ -214,7 +230,9 @@ internal static partial class EnvVariablesExpander
 
                 if (!IsValidBashVariable(key.AsSpan()))
                 {
-                    throw new EnvExpandException($"Bad substitution, invalid variable name {key}.");
+                    StringBuilderCache.Release(tokenBuilder);
+                    StringBuilderCache.Release(output);
+                    return new EnvExpandException($"Bad substitution, invalid variable name {key}.");
                 }
 
                 var value = getValue(key);
@@ -222,7 +240,11 @@ internal static partial class EnvVariablesExpander
                     output.Append(value);
 
                 if (value is null)
-                    throw new EnvExpandException($"Bad substitution, variable {key} is not set.");
+                {
+                    StringBuilderCache.Release(tokenBuilder);
+                    StringBuilderCache.Release(output);
+                    return new EnvExpandException($"Bad substitution, variable {key} is not set.");
+                }
 
                 if (append)
                     output.Append(c);
@@ -236,30 +258,24 @@ internal static partial class EnvVariablesExpander
             if (remaining == 0)
             {
                 if (kind is TokenKind.Windows)
-                    throw new EnvExpandException("Bad substitution, missing closing token '%'.");
+                {
+                    StringBuilderCache.Release(tokenBuilder);
+                    StringBuilderCache.Release(output);
+                    return new EnvExpandException("Bad substitution, missing closing token '%'.");
+                }
 
                 if (kind is TokenKind.BashInterpolation)
-                    throw new EnvExpandException("Bad substitution, missing closing token '}'.");
+                {
+                    StringBuilderCache.Release(output);
+                    return new EnvExpandException("Bad substitution, missing closing token '}'.");
+                }
             }
         }
 
+        StringBuilderCache.Release(tokenBuilder);
         var set = new char[output.Length];
         output.CopyTo(0, set, 0, output.Length);
-        output.Clear();
+        StringBuilderCache.Release(output);
         return set;
-    }
-
-    private static bool IsValidBashVariable(ReadOnlySpan<char> input)
-    {
-        for (var i = 0; i < input.Length; i++)
-        {
-            if (i == 0 && !char.IsLetter(input[i]))
-                return false;
-
-            if (!char.IsLetterOrDigit(input[i]) && input[i] is not '_')
-                return false;
-        }
-
-        return true;
     }
 }

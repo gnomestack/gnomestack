@@ -5,7 +5,7 @@
     <TargetFrameworks>$(StdFx)</TargetFrameworks>
     <Nullable>enable</Nullable>
     <ImplicitUsings>true</ImplicitUsings>
-    <RootNamespace>Gnome.Text.DotEnv</RootNamespace>
+    <RootNamespace>Gnome</RootNamespace>
   </PropertyGroup>
 
   <PropertyGroup>
@@ -27,6 +27,15 @@
 
   <ItemGroup>
    <PackageReference Include="Polyfill" />
+  </ItemGroup>
+  
+  <ItemGroup>
+    <Compile Include="../Sys/Sys/Memory/SpanExtensions.AsString.cs" Link="Sys/Memory/SpanExtensions.AsString.cs" />
+    <Compile Include="../Sys/Sys/EnvVariablesExpander.cs" Link="Sys/EnvVariablesExpander.cs" />
+    <Compile Include="../Sys/Sys/EnvExpandOptions.cs" Link="Sys/EnvExpandOptions.cs" />
+    <Compile Include="../Sys/Sys/EnvExpandException.cs" Link="Sys/EnvExpandException.cs" />
+    
+    <Compile Include="../Sys/Text/StringBuilderCache.cs" Link="Text/StringBuilderCache.cs" />
   </ItemGroup>
 
 </Project>
