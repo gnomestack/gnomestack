@@ -43,8 +43,8 @@
   
     <NetStandard>netstandard2.0</NetStandard>
 
-    <SourceGeneratorFx>netstandard2.0</SourceGeneratorFx>
-    <SourceGeneratorTestFx>netstandard2.0</SourceGeneratorTestFx>
+    <SourceGenFx>netstandard2.0</SourceGenFx>
+    <SourceGenTestFx>netstandard2.0</SourceGenTestFx>
 
     <LibFx>$(NetStandard);$(CoreLibFx)</LibFx>
     <LibTestFx>net472;$(CoreFx)</LibTestFx>
