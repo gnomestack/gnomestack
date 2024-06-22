@@ -1,5 +1,6 @@
 using System.Diagnostics.CodeAnalysis;
 using System.Runtime.CompilerServices;
+using System.Text.Json.Serialization;
 
 namespace Gnome.Sys;
 
@@ -29,18 +30,23 @@ public class Error : IError
         return new ExceptionError(ex);
     };
 
+    [JsonPropertyName("message")]
     public string Message { get; set; }
 
+    [JsonPropertyName("code")]
     public string? Code { get; set; }
 
+    [JsonPropertyName("target")]
     public virtual string? Target
     {
         get;
         protected set;
     }
 
+    [JsonIgnore]
     public virtual string? StackTrace { get; protected set; }
 
+    [JsonPropertyName("innerError")]
     public IInnerError? InnerError { get; set; }
 
     public static implicit operator Error(Exception ex)

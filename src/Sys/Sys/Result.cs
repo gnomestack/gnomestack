@@ -105,29 +105,29 @@ public class Result : IResult<ValueTuple, Error>
     public Error GetErrorOrDefault(Func<Error> defaultErrorFactory)
         => this.IsOk ? defaultErrorFactory() : this.error!;
 
-    public Result<TValue> Select<TValue>(Func<TValue> selector)
+    public Result<TValue> Map<TValue>(Func<TValue> selector)
         where TValue : notnull
         => this.IsOk ? new(selector()) : new(this.error);
 
-    public Result<TValue> Select<TValue>(Func<TValue> selector, Func<TValue> defaultValueFactory)
+    public Result<TValue> Map<TValue>(Func<TValue> selector, Func<TValue> defaultValueFactory)
         where TValue : notnull
         => this.IsOk ? new(selector()) : new(defaultValueFactory());
 
-    public Result<TValue> Select<TValue>(TValue value)
+    public Result<TValue> Map<TValue>(TValue value)
         where TValue : notnull
         => new(value);
 
-    public ValueResult<TValue, TError> Select<TValue, TError>(Func<TValue> map, Func<Error, TError> errorMap)
+    public ValueResult<TValue, TError> Map<TValue, TError>(Func<TValue> map, Func<Error, TError> errorMap)
         where TValue : notnull
         where TError : notnull
         => this.IsOk ? new(map(), default!, true) : new(default!, errorMap(this.error), false);
 
-    public ValueResult<TValue, TError> Select<TValue, TError>(Func<bool, Error?, ValueResult<TValue, TError>> map)
+    public ValueResult<TValue, TError> Map<TValue, TError>(Func<bool, Error?, ValueResult<TValue, TError>> map)
         where TValue : notnull
         where TError : notnull
         => map(this.IsOk, this.error);
 
-    public Result SelectError(Func<Error, Error> map)
+    public Result MapError(Func<Error, Error> map)
     {
         if (this.IsOk)
             return this;
